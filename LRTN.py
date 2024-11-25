@@ -27,7 +27,6 @@ class SpatialMSA(nn.Module):
         self.to_v = nn.Linear(dim_vector, head_dim * heads_number, bias=False)
         self.rescale = nn.Parameter(torch.ones(heads_number, 1, 1))  # 权重参数*CORE
         self.proj = nn.Sequential(
-            # 不能通过这里不能改变图像的通道数 而位置编码在外面，因此该模块的输出输出通道一致，且与外面的位置编码一致。
             nn.Linear(head_dim * heads_number, dim_vector),  # 现在要映射（b c wh）   num_heads_column * heads_number=wh
             nn.GELU()
         )
@@ -51,9 +50,9 @@ class SpatialMSA(nn.Module):
         k_inp = self.to_k(x_fu)
         v_inp = self.to_v(x_fu)
 
-        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=self.heads_number),   # b c wh --> b  多头数wh/d  c  每个头的维度d
-                  (q_inp, k_inp, v_inp))                                            # 就是分成多头的形式    b   wh/d  c d
-        q = q.transpose(-2, -1)  # q,k,v: b,heads,d,c
+        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=self.heads_number),  
+                  (q_inp, k_inp, v_inp))                                           
+        q = q.transpose(-2, -1) 
         k = k.transpose(-2, -1)
         v = v.transpose(-2, -1)
         q = F.normalize(q, dim=-1, p=2)
